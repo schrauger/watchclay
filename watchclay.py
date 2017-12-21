@@ -1,7 +1,8 @@
 # Watches Claymore mining status
 # Copyright 2017 Larry Lang
-# If rig becomes unresponsive, mPower power cycle
-# If rig overheats, mPower power off
+# Wemo support added by Stephen Schrauger
+# If rig becomes unresponsive, wPower power cycle
+# If rig overheats, wPower power off
 
 import sys, os, io, ConfigParser # configuration file input and parsing
 from random import randint # random cookie generation
@@ -25,14 +26,9 @@ version = config.get('version', 'ver')
 if  version != '1.0':
     print "Unknown configuration version"
     quit()
-
-MPOWER_IP      = config.get('mpower', 'mpower_ip')
-MPOWER_CRED    = [ ( 'username', config.get('mpower', 'mpower_username') ) , ('password', config.get('mpower', 'mpower_password') ), ]
-MPOWER_OUTLET  = config.getint('mpower', 'mpower_outlet')
-MPOWER_OFF  = [ ('output', '0'), ] # parameter turns off power outlet
-MPOWER_ON   = [ ('output', '1'), ] # parameter turns on  power outlet
-COOKIE = { 'AIROS_SESSIONID': ''.join(["%s" % randint(0, 9) for num in range(0, 32)]) } # cookie of 32 random digits
-
+IFTTT_WEBHOOKS_KEY = config.get('ifttt', 'webhooks_key')            # In your IFTTT account, this private key for webhooks
+IFTTT_WEBHOOKS_POWER_OFF = config.get('ifttt', 'webhooks_power_off_string') 
+IFTTT_WEBHOOKS_POWER_ON = config.get('ifttt', 'webhooks_power_on_string') 
 CLAYMORE_IP    = config.get('claymore', 'claymore_ip')
 CLAYMORE_PORT  = config.getint('claymore', 'claymore_port')
 
@@ -128,6 +124,38 @@ def mpower ( operation, outlet=1, cycletime=0 ):
         return (False)
     return r['sensors'][0]['output'] # return outlet state, 0=off 1=on
 
+def wpower ( operation, cycletime=0 )
+    if operations.lower() == 'readamps':
+        amps = 0
+        #@TODO read amps
+    elif operation.lower() == 'cycle':
+        print "Power cycling power outlet", outlet
+        #@TODO power off
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        print "Power off, pausing", cycletime, "seconds... ",
+        time.sleep(cycletime)
+        #@TODO power on
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        print "Power on"
+        print "Power cycle complete"
+    elif operation.lower() == 'off':
+        print "Powering off power outlet", outlet
+        #@TODO power off
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        print "Power off complete"
+    elif operation.lower() == 'on':
+        print "Powering on power outlet", outlet
+        #@TODO power on
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        print "Power on complete"
+    #try:
+    #    r = requests.get('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, timeout=WAIT_TIME).json()
+    #except requests.exceptions.RequestException as err:
+    #    print "mPower closing connection error:", err
+    #    return (False)
+    #return r['sensors'][0]['output'] # return outlet state, 0=off 1=on
+    #@TODO return outlet state
+
 def claystatus ( ip, port ):
     # return Claymore mining status
     clayreturn = { 'errortype' : 'None' , 'rebooting' : False, 'clayJSON' : {"result": [],} } # initialize return dictionary
@@ -159,7 +187,7 @@ worried = False # no emails about problems sent yet
 
 while True:
     # main loop
-    totalamps = mpower( operation = "readamps" ) # read total amps, also checks mPower connected and logged in
+    totalamps = wpower( operation = "readamps" ) # read total amps, also checks wPower connected and logged in
     cs = claystatus ( ip=CLAYMORE_IP, port=CLAYMORE_PORT )
     # print pstyle.GRAY+str(cs)+pstyle.END # verbose
     if cs['errortype'] == "None":
@@ -208,9 +236,9 @@ while True:
         else:
             print pstyle.RED+pstyle.BOLD+pstyle.BLINK+"Resetting via power cycle..."+pstyle.END
             recheck = 1    # reset clears recheck, except 1 for probation (no normal status yet)
-            mpower ( operation = 'cycle', outlet = MPOWER_OUTLET, cycletime=CYCLE_TIME )
+            wpower ( operation = 'cycle', cycletime=CYCLE_TIME )
             # send email for reset
-            if sendupdate( subject="Mining rig reset (via mPower cycle)", body=csstring+"\n"+cs['errortype'] ):
+            if sendupdate( subject="Mining rig reset (via wPower cycle)", body=csstring+"\n"+cs['errortype'] ):
                 prevupdate = time.time() # record email update time
                 worried = True # email about problem sent
                 print "Email sent about reset"
@@ -226,7 +254,7 @@ while True:
     # shut down if any GPU exceeds maximum temperature
     if ( int(maxtemp) >= TEMP_CEILING ):
         print "Rig running too hot. Shutting down..."
-        mpower ( operation = 'off', outlet = MPOWER_OUTLET )
+        wpower ( operation = 'off' )
         # send email for shut down
         if sendupdate( subject="Mining rig shut down (excess GPU temp)", body=csstring) :
             prevupdate = time.time() # record email update time
