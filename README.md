@@ -1,27 +1,27 @@
-watchclay
+watchclay for Wemo
 =========
-Watches a [Claymore Ethereum mining](https://github.com/nanopool/Claymore-Dual-Miner) rig for issues, and as needed, resets the rig by power cycling an outlet on a [Ubiquiti mPower](https://www.ubnt.com/mfi/mpower/) strip. Also summarizes useful Claymore health data.
+Watches a [Claymore Ethereum mining](https://github.com/nanopool/Claymore-Dual-Miner) rig for issues, and as needed, resets the rig by power cycling a wemo outlet using [If This Then That](https://ifttt.com). Also summarizes useful Claymore health data.
 
-![watchclay schematic](https://raw.githubusercontent.com/llang629/watchclay/master/images/watchclay_schematic.png)
+![watchclay schematic](https://raw.githubusercontent.com/schrauger/watchclay/master/images/watchclay_schematic.png)
 
 Purpose
 -------
 Sometimes a Claymore Ethereum mining rig can become unstable or unresponsive, particularly when optimizing GPU performance by overclocking and undervolting. If the inactivity goes unnoticed, or if a person can't get immediate physical access to cycle the power, the resulting idleness wastes potential mining capacity.
 
-This watchclay software watches Claymore via its remote management port (default 3333), which provides updates in JSON and HTML format. It watches for several kinds of issue:
+This watchclay software watches Claymore via its remote management port (default 3333), which provides updates in JSON and HTML format. It watches for several kinds of issues:
 
 - Claymore and/or the rig become unresponsive, and return no data.
 - The hash rate falls below some expected performance.
 - The mining pool rejects submitted shares.
 - The temperature of one or more GPUs exceeds some maximum amount.
 
-For most of these, watchclay rechecks a configurable number of times, and if the issue persists, it power cycles the designated outlet on the mPower strip to reset the rig and return Claymore to mining. In case of GPU overheating, watchclay immediately powers down the designated outlet to prevent permanent damage.
+For most of these, watchclay rechecks a configurable number of times, and if the issue persists, it power cycles the wemo outlet to reset the rig and return Claymore to mining. In case of GPU overheating, watchclay immediately powers down the outlet to prevent permanent damage.
 
 Email updates are sent whenever an issue persists and the rig is power cycled, and again when the rig returns to normal. An email update is also sent periodically to indicate normal operation.
 
-A high-level summary of Claymore rig health can be monitored using tail -f on a logfile of watchclay output. The summary includes overall hashrate, slowest GPU, shares accepted and rejected by the mining pool, the temperature of the hottest GPU, and total amps drawn. (Rig power consumption in watts equals current in amps multiplied by line voltage.)
+A high-level summary of Claymore rig health can be monitored using tail -f on a logfile of watchclay output. The summary includes overall hashrate, slowest GPU, shares accepted and rejected by the mining pool, and the temperature of the hottest GPU.
 
-![watchclay tail -f output](https://raw.githubusercontent.com/llang629/watchclay/master/images/watchclay_tailf.png)
+![watchclay tail -f output](https://raw.githubusercontent.com/schrauger/watchclay/master/images/watchclay_tailf.png)
 
 Launch and Compatibility
 --------
@@ -35,19 +35,40 @@ If no configuration file is explicitly named, watchclay looks for the default fi
 
 Functioning email service is expected at /usr/sbin/sendmail.
 
-watchclay has been tested with Claymore miner versions 10.0, 9.8, and 9.7. The software is written in Python, and has been tested with Python 2.7.10 on MacOS Sierra and with Python 2.7.12 on Ubuntu 16.04. It must run somewhere besides the mining rig; otherwise the power cycle becomes suicidal. For example, a small instance on Amazon Web Services with VPN access to the rig and mPower strip works well.
+watchclay has been tested with Claymore miner versions 10.0, 9.8, and 9.7. The software is written in Python, and has been tested with Python 2.7.10 on MacOS Sierra and with Python 2.7.12 on Ubuntu 16.04. It must run somewhere besides the mining rig; otherwise the power cycle becomes suicidal. For example, a small instance on Amazon Web Services with VPN access to the rig and wemo outlet works well.
 
 Configuration
 --------
+
+## If This Then That
+
+If This Then That (IFTTT) is a service that is used for automating many devices and services. Wemo supports this service, so this script uses IFTTT to tell Wemo to power off and on.
+
+You must have an IFTTT account, and then you must link the Wemo Insight or other smart plug to your IFTTT account. You must also connect the Webhooks Maker service.
+
+Create two applets, one for powering off and one for powering on.
+
+### Power Off
+
+* The `this` part will be a Webhooks Maker Event. Name it `wemo_power_off_request`.
+* The `that` part will be a Wemo hook. Select your Wemo device, and tell it to power off.
+
+### Power On
+
+* The `this` part will be a Webhooks Maker Event. Name it `wemo_power_on_request`.
+* The `that` part will be a Wemo hook. Select your Wemo device, and tell it to power on.
+
+## Config File
+
 Edit the watchclay.conf file to match the configuration to your environment and requriements.
 
-### mPower
+### If This Then That
 
-`mpower_ip` The IP address or hostname of your mPower strip.
+`webhooks_key` The unique key to your IFTTT webhooks url. This is found in the [webhooks IFTTT settings page](https://ifttt.com/services/maker_webhooks/settings).
 
-`mpower_username` and `mpower_password` The username and password for your mPower strip. The manufacturer's defaults are **ubnt** and **ubnt**.
+`webhooks_power_off_string` The event name passed to webhooks for powering off your wemo. You must define two IFTTT recipes, one for powering off and one for powering on. The string passed to webhooks must match the one defined here.
 
-`mpower_outlet` The mPower outlet to be turned off and on for a power-cycle reset. If other outlets on the strip are in use, their current draw will be included in the amps reported, but they will not be power cycled.
+`webhooks_power_on_string` The event name passed to webhooks for powering on your wemo.
 
 ### Claymore
 
@@ -85,13 +106,16 @@ Edit the watchclay.conf file to match the configuration to your environment and 
 
 Feedback
 --------
-Feedback welcome about bugs or feature requests, via the [Issues](https://github.com/llang629/watchclay/issues) tab.
+Feedback welcome about bugs or feature requests, via the [Issues](https://github.com/schrauger/watchclay/issues) tab.
 
 If watchclay helped you mine more efficiently, tips are always welcome! :moneybag: :beer: :smile:
 
-Ether `0x61a7d5222cbbC4c86AF8f26954D4BA2a8983DBC9`
+Original Author Ether `0x61a7d5222cbbC4c86AF8f26954D4BA2a8983DBC9`
+Wemo Support Author Ether `0x66a1Be3E3a6174afd579bBd31137F614Cb5c5031`
 
 Happy mining!
 
 ----------
 Copyright 2017 Larry Lang
+Wemo support added by Stephen Schrauger
+
