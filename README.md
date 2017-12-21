@@ -111,6 +111,7 @@ Feedback welcome about bugs or feature requests, via the [Issues](https://github
 If watchclay helped you mine more efficiently, tips are always welcome! :moneybag: :beer: :smile:
 
 Original Author Ether `0x61a7d5222cbbC4c86AF8f26954D4BA2a8983DBC9`
+
 Wemo Support Author Ether `0x66a1Be3E3a6174afd579bBd31137F614Cb5c5031`
 
 Happy mining!
