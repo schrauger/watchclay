@@ -74,61 +74,8 @@ def sendupdate ( subject, body ):
     p.communicate(msg.as_string())
     return(True)
 
-def mpower ( operation, outlet=1, cycletime=0 ):
-    # controls mPower outlet strip, default power outlet 1, default power cycle time 0 seconds
-    try: # check if logged in
-        r = requests.get('http://'+MPOWER_IP+'/sensors', cookies=COOKIE, timeout=WAIT_TIME)
-    except requests.exceptions.TooManyRedirects: # not logged in
-        try:
-            print "Attempting mPower login to", MPOWER_IP
-            requests.post('http://'+MPOWER_IP+'/login.cgi', cookies=COOKIE, data=MPOWER_CRED, timeout=WAIT_TIME)
-            print "mPower login success"
-            r = requests.get('http://'+MPOWER_IP+'/sensors', cookies=COOKIE, timeout=WAIT_TIME) # fetch again, now that logged in
-        except requests.exceptions.RequestException as err:
-            print "mPower login failed:", err
-            return (False)
-    except requests.exceptions.RequestException as err:
-        print "mPower opening connection error:", err
-        return (False)
-    # operations include read total amps, power cycle, power off, and power on
-    if operation.lower() == 'readamps':
-        amps = 0
-        try:
-            sensordata=r.json()
-        except ValueError as err:
-            print "mPower JSON error:", err
-            return amps
-        for item in r.json()["sensors"]:
-            amps += item["current"]
-        return amps
-    elif operation.lower() == 'cycle':
-        print "Power cycling power outlet", outlet
-        requests.put('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, data=MPOWER_OFF, timeout=WAIT_TIME)
-        print "Power off, pausing", cycletime, "seconds... ",
-        time.sleep(cycletime)
-        requests.put('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, data=MPOWER_ON,  timeout=WAIT_TIME)
-        print "Power on"
-        print "Power cycle complete"
-    elif operation.lower() == 'off':
-        print "Powering off power outlet", outlet
-        requests.put('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, data=MPOWER_OFF, timeout=WAIT_TIME)
-        print "Power off complete"
-    elif operation.lower() == 'on':
-        print "Powering on power outlet", outlet
-        requests.put('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, data=MPOWER_ON,  timeout=WAIT_TIME)
-        print "Power on complete"
-    try:
-        r = requests.get('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, timeout=WAIT_TIME).json()
-    except requests.exceptions.RequestException as err:
-        print "mPower closing connection error:", err
-        return (False)
-    return r['sensors'][0]['output'] # return outlet state, 0=off 1=on
-
 def wpower ( operation, cycletime=0 )
-    if operations.lower() == 'readamps':
-        amps = 0
-        #@TODO read amps
-    elif operation.lower() == 'cycle':
+    if operation.lower() == 'cycle':
         print "Power cycling power outlet", outlet
         #@TODO power off
         r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY
@@ -187,7 +134,6 @@ worried = False # no emails about problems sent yet
 
 while True:
     # main loop
-    totalamps = wpower( operation = "readamps" ) # read total amps, also checks wPower connected and logged in
     cs = claystatus ( ip=CLAYMORE_IP, port=CLAYMORE_PORT )
     # print pstyle.GRAY+str(cs)+pstyle.END # verbose
     if cs['errortype'] == "None":
@@ -214,8 +160,7 @@ while True:
             print cs['errortype']
         csstring = pstyle.BOLD+"Hashrate:"+str(hashrate)+"Mh/s"+pstyle.END+" (GPU"+str(mingpu)+" "+str(minhash)+" slowest)" \
                     +"\t"+pstyle.GREEN+"Total shares:"+str(totalshares)+pstyle.END+" (Rejected:"+str(rejectshares)+")" \
-                    +"\t"+"Max temp:"+str(maxtemp)+" (GPU"+str(maxgpu)+")" \
-                    +"\t"+"Amps:%.2f"%totalamps
+                    +"\t"+"Max temp:"+str(maxtemp)+" (GPU"+str(maxgpu)+")"
         print time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "\t", csstring
     else:
         print cs['errortype']
