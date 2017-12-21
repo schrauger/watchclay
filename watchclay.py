@@ -74,35 +74,28 @@ def sendupdate ( subject, body ):
     p.communicate(msg.as_string())
     return(True)
 
-def wpower ( operation, cycletime=0 )
+def wpower ( operation, cycletime=0 ):
     if operation.lower() == 'cycle':
-        print "Power cycling power outlet", outlet
+        print "Power cycling power outlet"
         #@TODO power off
-        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY
-        print "Power off, pausing", cycletime, "seconds... ",
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY)
+        print "Power off, pausing", cycletime, "seconds... "
         time.sleep(cycletime)
         #@TODO power on
-        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY)
         print "Power on"
         print "Power cycle complete"
     elif operation.lower() == 'off':
-        print "Powering off power outlet", outlet
+        print "Powering off power outlet"
         #@TODO power off
-        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_OFF)+'/with/key/'+IFTTT_WEBHOOKS_KEY)
         print "Power off complete"
     elif operation.lower() == 'on':
-        print "Powering on power outlet", outlet
+        print "Powering on power outlet"
         #@TODO power on
-        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY
+        r = requests.get('https://maker.ifttt.com/trigger/'+str(IFTTT_WEBHOOKS_POWER_ON)+'/with/key/'+IFTTT_WEBHOOKS_KEY)
         print "Power on complete"
-    #try:
-    #    r = requests.get('http://'+MPOWER_IP+'/sensors/'+str(outlet), cookies=COOKIE, timeout=WAIT_TIME).json()
-    #except requests.exceptions.RequestException as err:
-    #    print "mPower closing connection error:", err
-    #    return (False)
-    #return r['sensors'][0]['output'] # return outlet state, 0=off 1=on
-    #@TODO return outlet state
-
+        
 def claystatus ( ip, port ):
     # return Claymore mining status
     clayreturn = { 'errortype' : 'None' , 'rebooting' : False, 'clayJSON' : {"result": [],} } # initialize return dictionary
