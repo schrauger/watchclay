@@ -118,5 +118,6 @@ Happy mining!
 
 ----------
 Copyright 2017 Larry Lang
+
 Wemo support added by Stephen Schrauger
 
